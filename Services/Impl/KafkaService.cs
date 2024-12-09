@@ -39,6 +39,9 @@ namespace Media_microservice.Services.Impl
                         case "GetFile":
                             await HandleGetFileAsync(fileRequest);
                             break;
+                        case "DeleteFile":
+                            await HandleDeleteFileAsync(fileRequest);
+                            break;
                     }
                 }
             }
@@ -59,6 +62,12 @@ namespace Media_microservice.Services.Impl
         {
             await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 300);
             _logger.LogInformation($"Presigned URL for file {request.FileName} generated for holder {request.Holder}");
+        }
+
+        private async Task HandleDeleteFileAsync(FileRequest request)
+        {
+            await _minioService.DeleteFileAsync(request.Holder, request.FileName);
+            _logger.LogInformation($"File {request.FileName} deleted with holder {request.Holder}");
         }
     }
 }
