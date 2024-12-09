@@ -1,5 +1,4 @@
-﻿
-using Minio;
+﻿using Minio;
 using Minio.DataModel.Args;
 
 namespace Media_microservice.Services.Impl
@@ -21,28 +20,19 @@ namespace Media_microservice.Services.Impl
         {
             string objectName = $"{holder}/{fileName}";
 
+            _logger.LogDebug($"Generating presigned URL for object {objectName}");
+
             return await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
                 .WithBucket(_bucketName)
                 .WithObject(objectName)
                 .WithExpiry(expiryInSeconds));
         }
 
-        public async Task<byte[]> GetFileAsync(string holder, string fileName)
-        {
-            string objectName = $"{holder}/{fileName}";
-            var memoryStream = new MemoryStream();
-
-            await _minioClient.GetObjectAsync(new GetObjectArgs()
-                .WithBucket(_bucketName)
-                .WithObject(objectName)
-                .WithCallbackStream(stream => stream.CopyTo(memoryStream)));
-
-            return memoryStream.ToArray();
-        }
-
         public async Task SaveFileAsync(string holder, string fileName, byte[] fileData)
         {
             string objectName = $"{holder}/{fileName}";
+
+            _logger.LogDebug($"Saving file {fileName} with object name {objectName}");
 
             using (var stream = new MemoryStream(fileData))
             {

@@ -11,6 +11,8 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 builder.Services.AddControllers();
 
+DotNetEnv.Env.Load();
+
 string? bootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS");
 string? groupId = Environment.GetEnvironmentVariable("KAFKA_GROUP_ID");
 string? topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
@@ -60,18 +62,9 @@ builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
 });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseAuthorization();
-
-app.MapControllers();
 
 app.Run();

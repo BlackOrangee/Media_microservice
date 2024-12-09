@@ -1,6 +1,3 @@
 @Media_microservice_HostAddress = http://localhost:5256
 
-GET {{Media_microservice_HostAddress}}/weatherforecast/
-Accept: application/json
-
 ###

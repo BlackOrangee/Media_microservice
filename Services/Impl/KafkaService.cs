@@ -21,6 +21,7 @@ namespace Media_microservice.Services.Impl
             _topic = topic;
             _consumer.Subscribe(_topic);
         }
+
         public async Task StartListeningAsync()
         {
             while (true)
@@ -45,6 +46,10 @@ namespace Media_microservice.Services.Impl
 
         private async Task HandleSaveFileAsync(FileRequest request)
         {
+            if (request.FileData == null)
+            {
+                throw new ArgumentNullException(nameof(request.FileData));
+            }
             var fileData = Convert.FromBase64String(request.FileData);
             await _minioService.SaveFileAsync(request.Holder, request.FileName, fileData);
             _logger.LogInformation($"File {request.FileName} saved with holder {request.Holder}");
@@ -52,16 +57,8 @@ namespace Media_microservice.Services.Impl
 
         private async Task HandleGetFileAsync(FileRequest request)
         {
-            if (request.GenerateLink)
-            {
-                var url = await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 3600);
-                _logger.LogInformation($"Presigned URL for file {request.FileName} generated for holder {request.Holder}");
-            }
-            else
-            {
-                var fileData = await _minioService.GetFileAsync(request.Holder, request.FileName);
-                _logger.LogInformation($"File {request.FileName} retrieved with holder {request.Holder}");
-            }
+            await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 300);
+            _logger.LogInformation($"Presigned URL for file {request.FileName} generated for holder {request.Holder}");
         }
     }
 }
