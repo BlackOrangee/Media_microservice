@@ -63,12 +63,12 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Copy artifact to server via SCP
-        run: scp -o StrictHostKeyChecking=no ./app/app.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/chat/mediaMicroservice/app.tar.gz
+        run: scp -o StrictHostKeyChecking=no ./app/app.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:./chat/mediaMicroservice/app.tar.gz
 
       - name: SSH into server and extract
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-          cd /chat/mediaMicroservice
+          cd ./chat/mediaMicroservice
           tar -xzvf app.tar.gz
           rm app.tar.gz
           cd ..
