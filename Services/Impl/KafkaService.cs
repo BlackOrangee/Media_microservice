@@ -8,16 +8,20 @@ namespace Media_microservice.Services.Impl
     {
         private readonly ILogger<KafkaService> _logger;
         private readonly IConsumer<string, string> _consumer;
+        private readonly IProducer<string, string> _responseProducer;
         private readonly IMinioService _minioService;
         private readonly string _topic;
 
         public KafkaService(ILogger<KafkaService> logger, IMinioService minioService,
-                                        ConsumerConfig consumerConfig, string topic)
+                            ConsumerConfig consumerConfig, ProducerConfig producerConfig, 
+                            string topic)
         {
             _logger = logger;
             _minioService = minioService;
 
             _consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
+            _responseProducer = new ProducerBuilder<string, string>(producerConfig).Build();
+
             _topic = topic;
             _consumer.Subscribe(_topic);
         }
@@ -33,13 +37,13 @@ namespace Media_microservice.Services.Impl
                 {
                     switch (fileRequest.Operation)
                     {
-                        case "SaveFile":
+                        case "Save":
                             await HandleSaveFileAsync(fileRequest);
                             break;
-                        case "GetFile":
+                        case "Get":
                             await HandleGetFileAsync(fileRequest);
                             break;
-                        case "DeleteFile":
+                        case "Delete":
                             await HandleDeleteFileAsync(fileRequest);
                             break;
                     }
@@ -60,7 +64,8 @@ namespace Media_microservice.Services.Impl
 
         private async Task HandleGetFileAsync(FileRequest request)
         {
-            await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 300);
+            var url = await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 300);
+            await SendResponseAsync(request.FileName, url);
             _logger.LogInformation($"Presigned URL for file {request.FileName} generated for holder {request.Holder}");
         }
 
@@ -68,6 +73,15 @@ namespace Media_microservice.Services.Impl
         {
             await _minioService.DeleteFileAsync(request.Holder, request.FileName);
             _logger.LogInformation($"File {request.FileName} deleted with holder {request.Holder}");
+        }
+
+        private async Task SendResponseAsync(string key, string response)
+        {
+            await _responseProducer.ProduceAsync("media-responses", new Message<string, string>
+            {
+                Key = key,
+                Value = response
+            });
         }
     }
 }
