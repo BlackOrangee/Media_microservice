@@ -23,19 +23,20 @@ jobs:
         run: dotnet restore Media_microservice.csproj
 
       - name: Build the project
-        env:
-          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
-          KAFKA_GROUP_ID: ${{ secrets.KAFKA_GROUP_ID }}
-          KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC }}
-          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
-          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
-          MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
-
         run: dotnet publish Media_microservice.csproj -c Release -o out
 
       - name: Copy Dockerfile
         run: cp Dockerfile out/
+      
+      - name: Create .env file
+        run: |
+          echo -e "KAFKA_BOOTSTRAP_SERVERS=${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" > out/.env
+          echo -e "KAFKA_GROUP_ID=${{ secrets.KAFKA_GROUP_ID }}" >> out/.env
+          echo -e "KAFKA_TOPIC=${{ secrets.KAFKA_TOPIC }}" >> out/.env
+          echo -e "MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}" >> out/.env
+          echo -e "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> out/.env
+          echo -e "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> out/.env
+          echo -e "MINIO_BUCKET_NAME=${{ secrets.MINIO_BUCKET_NAME }}" >> out/.env
 
       - name: Archive the output
         run: tar -czvf app.tar.gz -C out .
