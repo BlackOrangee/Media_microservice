@@ -4,6 +4,7 @@
     {
         private readonly IKafkaService _kafkaService;
         private readonly ILogger<KafkaBackgroundService> _logger;
+        private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(5);
 
         public KafkaBackgroundService(IKafkaService kafkaService, ILogger<KafkaBackgroundService> logger)
         {
@@ -15,15 +16,28 @@
         {
             _logger.LogInformation("Starting Kafka listener...");
 
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await _kafkaService.StartListeningAsync();
+                try
+                {
+                    await _kafkaService.StartListeningAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Kafka listener stopped unexpectedly: {ex.Message}");
+
+                    if (stoppingToken.IsCancellationRequested)
+                    {
+                        _logger.LogInformation("Stopping Kafka listener due to cancellation.");
+                        break;
+                    }
+
+                    _logger.LogInformation($"Retrying to start Kafka listener in {_retryDelay.TotalSeconds} seconds...");
+                    await Task.Delay(_retryDelay, stoppingToken);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Kafka listener stopped unexpectedly: {ex.Message}");
-                throw;
-            }
+
+            _logger.LogInformation("Kafka listener has been stopped.");
         }
     }
 }
