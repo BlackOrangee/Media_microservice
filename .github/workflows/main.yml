@@ -1,1 +1,75 @@
+name: Build and Copy to Server
 
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+env:
+  KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+  KAFKA_GROUP_ID: ${{ secrets.KAFKA_GROUP_ID }}
+  KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC }}
+  MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+  MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+  MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+  MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Media_microservice.csproj
+
+      - name: Build the project
+        run: dotnet publish Media_microservice.csproj -c Release -o out
+
+      - name: Copy Dockerfile
+        run: cp Dockerfile out/
+
+      - name: Archive the output
+        run: tar -czvf app.tar.gz -C out .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: app.tar.gz
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-artifact
+          path: ./app
+
+      - name: Setup SSH agent and add private key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy artifact to server via SCP
+        run: scp -o StrictHostKeyChecking=no ./app/app.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/chat/mediaMicroservice/app.tar.gz
+
+      - name: SSH into server and extract
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          cd /chat/mediaMicroservice
+          tar -xzvf app.tar.gz
+          rm app.tar.gz
+          cd ..
+
+          EOF
