@@ -4,7 +4,7 @@
     {
         private readonly IKafkaService _kafkaService;
         private readonly ILogger<KafkaBackgroundService> _logger;
-        private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(5);
+        private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(20);
 
         public KafkaBackgroundService(IKafkaService kafkaService, ILogger<KafkaBackgroundService> logger)
         {
