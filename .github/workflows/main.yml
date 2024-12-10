@@ -5,14 +5,6 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-env:
-  KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
-  KAFKA_GROUP_ID: ${{ secrets.KAFKA_GROUP_ID }}
-  KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC }}
-  MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
-  MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-  MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
-  MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
 
 jobs:
   build:
@@ -31,6 +23,15 @@ jobs:
         run: dotnet restore Media_microservice.csproj
 
       - name: Build the project
+        env:
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          KAFKA_GROUP_ID: ${{ secrets.KAFKA_GROUP_ID }}
+          KAFKA_TOPIC: ${{ secrets.KAFKA_TOPIC }}
+          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+          MINIO_BUCKET_NAME: ${{ secrets.MINIO_BUCKET_NAME }}
+
         run: dotnet publish Media_microservice.csproj -c Release -o out
 
       - name: Copy Dockerfile
