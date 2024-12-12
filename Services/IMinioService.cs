@@ -2,8 +2,8 @@
 {
     public interface IMinioService
     {
-        Task SaveFileAsync(string holder, string fileName, byte[] fileData);
-        Task<string> GeneratePresignedUrlAsync(string holder, string fileName, int expiryInSeconds);
-        Task DeleteFileAsync(string holder, string fileName);
+        Task SaveFileAsync(string fileName, byte[] fileData);
+        Task<string> GeneratePresignedUrlAsync(string fileName, int expiryInSeconds);
+        Task DeleteFileAsync(string fileName);
     }
 }

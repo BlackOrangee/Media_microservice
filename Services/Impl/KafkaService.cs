@@ -58,21 +58,21 @@ namespace Media_microservice.Services.Impl
                 throw new ArgumentNullException(nameof(request.FileData));
             }
             var fileData = Convert.FromBase64String(request.FileData);
-            await _minioService.SaveFileAsync(request.Holder, request.FileName, fileData);
-            _logger.LogInformation($"File {request.FileName} saved with holder {request.Holder}");
+            await _minioService.SaveFileAsync(request.FileName, fileData);
+            _logger.LogInformation($"File {request.FileName} saved");
         }
 
         private async Task HandleGetFileAsync(FileRequest request)
         {
-            var url = await _minioService.GeneratePresignedUrlAsync(request.Holder, request.FileName, 300);
+            var url = await _minioService.GeneratePresignedUrlAsync(request.FileName, 300);
             await SendResponseAsync(request.FileName, url);
-            _logger.LogInformation($"Presigned URL for file {request.FileName} generated for holder {request.Holder}");
+            _logger.LogInformation($"Presigned URL for file {request.FileName} generated");
         }
 
         private async Task HandleDeleteFileAsync(FileRequest request)
         {
-            await _minioService.DeleteFileAsync(request.Holder, request.FileName);
-            _logger.LogInformation($"File {request.FileName} deleted with holder {request.Holder}");
+            await _minioService.DeleteFileAsync(request.FileName);
+            _logger.LogInformation($"File {request.FileName} deleted");
         }
 
         private async Task SendResponseAsync(string key, string response)

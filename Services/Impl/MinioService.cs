@@ -16,56 +16,51 @@ namespace Media_microservice.Services.Impl
             _bucketName = bucketName;
         }
 
-        public Task DeleteFileAsync(string holder, string fileName)
+        public Task DeleteFileAsync(string fileName)
         {
-            string objectName = $"{holder}/{fileName}";
-
             try
             {
-                _logger.LogDebug($"Deleting file {fileName} with object name {objectName}");
+                _logger.LogDebug($"Deleting file {fileName}");
 
                 return _minioClient.RemoveObjectAsync(new RemoveObjectArgs()
                     .WithBucket(_bucketName)
-                    .WithObject(objectName));
+                    .WithObject(fileName));
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error deleting file {fileName} with object name {objectName}: {ex.Message}");
-                throw new Exception($"Error deleting file {fileName} with object name {objectName}: {ex.Message}", ex);
+                _logger.LogError($"Error deleting file {fileName}: {ex.Message}");
+                throw new Exception($"Error deleting file {fileName}: {ex.Message}", ex);
             }
         }
 
-        public async Task<string> GeneratePresignedUrlAsync(string holder, string fileName, int expiryInSeconds)
+        public async Task<string> GeneratePresignedUrlAsync(string fileName, int expiryInSeconds)
         {
-            string objectName = $"{holder}/{fileName}";
-
             try
             {
-                _logger.LogDebug($"Generating presigned URL for object {objectName}");
+                _logger.LogDebug($"Generating presigned URL for object {fileName}");
 
                 return await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
                     .WithBucket(_bucketName)
-                    .WithObject(objectName)
+                    .WithObject(fileName)
                     .WithExpiry(expiryInSeconds));
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error generating presigned URL for object {objectName}: {ex.Message}");
-                throw new Exception($"Error generating presigned URL for object {objectName}: {ex.Message}", ex);
+                _logger.LogError($"Error generating presigned URL for object {fileName}: {ex.Message}");
+                throw new Exception($"Error generating presigned URL for object {fileName}: {ex.Message}", ex);
             }
         }
 
-        public async Task SaveFileAsync(string holder, string fileName, byte[] fileData)
+        public async Task SaveFileAsync(string fileName, byte[] fileData)
         {
-            string objectName = $"{holder}/{fileName}";
 
-            _logger.LogDebug($"Saving file {fileName} with object name {objectName}");
+            _logger.LogDebug($"Saving file {fileName}");
 
             using (var stream = new MemoryStream(fileData))
             {
                 await _minioClient.PutObjectAsync(new PutObjectArgs()
                     .WithBucket(_bucketName)
-                    .WithObject(objectName)
+                    .WithObject(fileName)
                     .WithStreamData(stream)
                     .WithObjectSize(stream.Length)
                     .WithContentType("application/octet-stream"));
