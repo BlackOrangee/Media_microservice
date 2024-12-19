@@ -64,7 +64,12 @@ namespace Media_microservice.Services.Impl
 
         private async Task HandleGetFileAsync(FileRequest request)
         {
-            var url = await _minioService.GeneratePresignedUrlAsync(request.FileName, 300);
+            int lifeTime = 300;
+            if (request.LifeTime != null)
+            {
+                lifeTime = request.LifeTime.Value;
+            }
+            var url = await _minioService.GeneratePresignedUrlAsync(request.FileName, lifeTime);
             await SendResponseAsync(request.FileName, url);
             _logger.LogInformation($"Presigned URL for file {request.FileName} generated");
         }

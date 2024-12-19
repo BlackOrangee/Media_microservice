@@ -42,7 +42,8 @@ var consumerConfig = new ConsumerConfig
 {
     BootstrapServers = bootstrapServers,
     GroupId = groupId,
-    AutoOffsetReset = AutoOffsetReset.Earliest
+    AutoOffsetReset = AutoOffsetReset.Earliest,
+    EnableAutoCommit = false
 };
 
 var producerConfig = new ProducerConfig
@@ -65,7 +66,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
                     .As<IMinioService>()
                     .WithParameter("minioClient", minioClient)
                     .WithParameter("bucketName", bucketName)
-                    .SingleInstance();
+                    .InstancePerLifetimeScope();
 
     containerBuilder.RegisterType<KafkaService>()
                     .As<IKafkaService>()

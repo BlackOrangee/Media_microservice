@@ -1,4 +1,5 @@
-﻿using Minio;
+﻿using Microsoft.AspNetCore.Mvc;
+using Minio;
 using Minio.DataModel.Args;
 
 namespace Media_microservice.Services.Impl
@@ -42,7 +43,8 @@ namespace Media_microservice.Services.Impl
                 return await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
                     .WithBucket(_bucketName)
                     .WithObject(fileName)
-                    .WithExpiry(expiryInSeconds));
+                    .WithExpiry(expiryInSeconds)
+                    .WithRequestDate(DateTime.UtcNow));
             }
             catch (Exception ex)
             {
