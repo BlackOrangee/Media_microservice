@@ -48,6 +48,7 @@ namespace Media_microservice.Services.Impl
                             break;
                     }
                 }
+                _consumer.Commit(consumeResult);
             }
         }
 
