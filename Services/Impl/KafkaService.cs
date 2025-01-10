@@ -71,7 +71,7 @@ namespace Media_microservice.Services.Impl
                 lifeTime = request.LifeTime.Value;
             }
             var url = await _minioService.GeneratePresignedUrlAsync(request.FileName, lifeTime);
-            await SendResponseAsync(request.FileName, url);
+            await SendResponseAsync(request.CorrelationId, url);
             _logger.LogInformation($"Presigned URL for file {request.FileName} generated");
         }
 
