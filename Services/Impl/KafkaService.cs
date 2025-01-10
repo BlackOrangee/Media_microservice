@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Media_microservice.Requests;
+using Sprache;
 using System.Text.Json;
 
 namespace Media_microservice.Services.Impl
@@ -30,11 +31,19 @@ namespace Media_microservice.Services.Impl
         {
             while (true)
             {
+                Console.WriteLine("Try to consume");
                 var consumeResult = _consumer.Consume();
+                Console.WriteLine("Consumed");
                 var fileRequest = JsonSerializer.Deserialize<FileRequest>(consumeResult.Message.Value);
+                if (consumeResult != null)
+                {
+                    Console.WriteLine("Result: " + consumeResult.Message.Value);
+                    Console.WriteLine("Key: " + consumeResult.Message.Key);
 
+                }
                 if (fileRequest != null)
                 {
+                    Console.WriteLine("Result is not null");
                     switch (fileRequest.Operation)
                     {
                         case "Save":
@@ -48,7 +57,6 @@ namespace Media_microservice.Services.Impl
                             break;
                     }
                 }
-                _consumer.Commit(consumeResult);
             }
         }
 
@@ -71,7 +79,7 @@ namespace Media_microservice.Services.Impl
                 lifeTime = request.LifeTime.Value;
             }
             var url = await _minioService.GeneratePresignedUrlAsync(request.FileName, lifeTime);
-            await SendResponseAsync(request.CorrelationId, url);
+            await SendResponseAsync(request.FileName, url);
             _logger.LogInformation($"Presigned URL for file {request.FileName} generated");
         }
 
