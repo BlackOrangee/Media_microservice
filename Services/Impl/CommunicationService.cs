@@ -21,13 +21,21 @@ namespace Media_microservice.Services.Impl
 
         public async Task StartListeningAsync()
         {
+            int retryCount = 0;
+
             while (true)
             {
+                if (retryCount > 20)
+                {
+                    Thread.Sleep(10000);
+                }
+
                 MediaRequest? mediaRequest = await _context.MediaRequests.FirstOrDefaultAsync(r => r.Locked == false && r.Done == false);
 
                 if (mediaRequest == null)
                 {
                     Thread.Sleep(_delay);
+                    retryCount++;
                     continue;
                 }
 
@@ -45,6 +53,7 @@ namespace Media_microservice.Services.Impl
                     _context.MediaRequests.Update(mediaRequest);
                     await _context.SaveChangesAsync();
                     Thread.Sleep(_delay);
+                    retryCount++;
                     continue;
                 }
 
@@ -66,6 +75,7 @@ namespace Media_microservice.Services.Impl
                 _context.MediaRequests.Update(mediaRequest);
                 await _context.SaveChangesAsync();
                 
+                retryCount = 0;
                 Thread.Sleep(_delay);
             }
         }
