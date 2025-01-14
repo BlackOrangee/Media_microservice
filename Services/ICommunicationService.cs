@@ -1,6 +1,6 @@
 ﻿namespace Media_microservice.Services
 {
-    public interface IKafkaService
+    public interface ICommunicationService
     {
         Task StartListeningAsync();
     }

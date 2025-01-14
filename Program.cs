@@ -1,23 +1,23 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Confluent.Kafka;
+using Media_microservice;
 using Media_microservice.Services;
 using Media_microservice.Services.Impl;
+using Microsoft.EntityFrameworkCore;
 using Minio;
+using MySqlConnector;
 
 DotNetEnv.Env.Load();
 
-string? topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
-string? groupId = Environment.GetEnvironmentVariable("KAFKA_GROUP_ID");
-string? bootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS");
+string? connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 string? minioEndpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT");
 string? bucketName = Environment.GetEnvironmentVariable("MINIO_BUCKET_NAME");
 string? minioAccessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY");
 string? minioSecretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY");
 
-if (string.IsNullOrEmpty(bootstrapServers) || string.IsNullOrEmpty(groupId) || string.IsNullOrEmpty(topic))
+if (string.IsNullOrEmpty(connectionString))
 {
-    throw new Exception("KAFKA_BOOTSTRAP_SERVERS, KAFKA_GROUP_ID or KAFKA_TOPIC environment variable is not set");
+    throw new Exception("DB_CONNECTION_STRING environment variable is not set");
 }
 
 if (string.IsNullOrEmpty(minioEndpoint) || string.IsNullOrEmpty(minioAccessKey) 
@@ -29,6 +29,9 @@ if (string.IsNullOrEmpty(minioEndpoint) || string.IsNullOrEmpty(minioAccessKey)
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<ApplicationDBContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)), ServiceLifetime.Scoped);
+
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 builder.Services.AddControllers();
@@ -38,49 +41,48 @@ var minioClient = new MinioClient()
     .WithCredentials(minioAccessKey, minioSecretKey)
     .Build();
 
-var consumerConfig = new ConsumerConfig
-{
-    BootstrapServers = bootstrapServers,
-    GroupId = groupId,
-    AutoOffsetReset = AutoOffsetReset.Earliest,
-    EnableAutoCommit = false
-};
-
-var producerConfig = new ProducerConfig
-{
-    BootstrapServers = bootstrapServers
-};
 
 builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
 {
-
-    containerBuilder.RegisterInstance(producerConfig)
-                    .As<ProducerConfig>()
-                    .SingleInstance();
-
-    containerBuilder.RegisterInstance(consumerConfig)
-                    .As<ConsumerConfig>()
-                    .SingleInstance();
-
     containerBuilder.RegisterType<MinioService>()
                     .As<IMinioService>()
                     .WithParameter("minioClient", minioClient)
                     .WithParameter("bucketName", bucketName)
                     .InstancePerLifetimeScope();
 
-    containerBuilder.RegisterType<KafkaService>()
-                    .As<IKafkaService>()
-                    .WithParameter("consumerConfig", consumerConfig)
-                    .WithParameter("producerConfig", producerConfig)
-                    .WithParameter("topic", topic)
+    containerBuilder.RegisterType<CommunicationService>()
+                    .As<ICommunicationService>()
                     .InstancePerLifetimeScope();
 });
 
-builder.Services.AddHostedService<KafkaBackgroundService>();
+builder.Services.AddHostedService<InitialBackgroundService>();
 
 builder.Services.AddEndpointsApiExplorer();
 
 var app = builder.Build();
+
+using (var connection = new MySqlConnection(connectionString))
+{
+    connection.Open();
+    using (var command = new MySqlCommand("SELECT 1", connection))
+    {
+        command.ExecuteScalar();
+    }
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+    try
+    {
+        dbContext.Database.CanConnect();
+        Console.WriteLine("Connected to database");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Could not connect to database. Message: {ex.Message}");
+    }
+}
 
 app.UseAuthorization();
 

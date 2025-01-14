@@ -30,9 +30,7 @@ jobs:
       
       - name: Create .env file
         run: |
-          echo -e "KAFKA_BOOTSTRAP_SERVERS=${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}" > out/.env
-          echo -e "KAFKA_GROUP_ID=${{ secrets.KAFKA_GROUP_ID }}" >> out/.env
-          echo -e "KAFKA_TOPIC=${{ secrets.KAFKA_TOPIC }}" >> out/.env
+          echo -e "DB_CONNECTION_STRING=${{ secrets.DB_CONNECTION_STRING }}" >> out/.env
           echo -e "MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}" >> out/.env
           echo -e "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> out/.env
           echo -e "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> out/.env
